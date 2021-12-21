@@ -6,12 +6,12 @@ Gra pisana jako projekt na przedmiot Systemy Operacyjne. Na początku jej pliki 
 ## Spis treści
 
 ## Wymagania do włączenia serwera
-# Pliki potrzebne
+### Pliki potrzebne
  - serwer_nowy
  - slowa.txt
  - shadow.txt
  - ustawienia.ini
-# Pliki opcjonalne
+### Pliki opcjonalne
  - punkty.txt
  - punkty.json
  - kolejka.json
