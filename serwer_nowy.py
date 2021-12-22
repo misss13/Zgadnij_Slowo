@@ -179,17 +179,6 @@ Slownik_hint = {
     'ż':1
 }
 
-ServerSocket = socket.socket(family = socket.AF_INET, type = socket.SOCK_STREAM) 
-host = '127.0.0.1' #'136.243.156.120' #IP SERWERA
-port = 12345 #12186 #PORT
-
-"""host = '136.243.156.120' #IP SERWERA
-port = 2186 #PORT"""
-try:
-    ServerSocket.bind((host, port))
-except socket.error as e:
-    print(str(e))
-ServerSocket.listen(NIESKONCZONOSC_POLACZEN)
 
 
 class ThreadWithReturnValue(threading.Thread):
@@ -516,6 +505,10 @@ def Czasomierz():
     animacja = round(Czas_do_rundy/30)
     while True:
         Prasowanie()
+        """line = sys.stdin.readline()
+        if line:
+            ServerSocket.close()
+            os._exit(1)"""
         trwanie_do_rundy = round(Czas_do_rundy / 2)
         animacja = round(Czas_do_rundy/30)
         #rysowanie pasku ładowania do kolejnej gry (jesli zbierze sie odp ilosc graczy)
@@ -684,6 +677,14 @@ if __name__=="__main__":
         print("Serwer działa na stronce")
         host = '136.243.156.120'
         port = 12186
+    
+    ServerSocket = socket.socket(family = socket.AF_INET, type = socket.SOCK_STREAM) 
+    try:
+        ServerSocket.bind((host, port))
+    except socket.error as e:
+        print(str(e))
+    ServerSocket.listen(NIESKONCZONOSC_POLACZEN)
+    
     print("Serwer up")
     Zaladuj_slowa()
     start_new_thread(Czasomierz,())
