@@ -674,15 +674,16 @@ def Gra(Bierzaca_gra_gracze, Ilosc_w_grze):
 if __name__=="__main__":
     if (len(sys.argv)-1) < 1:
         print("python serwer_nowy.py [lok/ser]")
+        quit()
     ktore = sys.argv[1]
     if ktore == "lok":
         print("Serwer działa na loopbacku")
-        IP = '127.0.0.1'
-        PORT = 12345 
+        host = '127.0.0.1'
+        port = 12345 
     else:
         print("Serwer działa na stronce")
-        IP = '136.243.156.120'
-        PORT = 12186
+        host = '136.243.156.120'
+        port = 12186
     print("Serwer up")
     Zaladuj_slowa()
     start_new_thread(Czasomierz,())
