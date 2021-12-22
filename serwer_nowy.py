@@ -7,6 +7,7 @@ import re
 import os
 import random
 import configparser
+import sys
 from typing import List
 from _thread import *
 from datetime import datetime
@@ -43,7 +44,7 @@ def Zaladuj_slowa():
     global Lista_slow_do_losowania
 
     print("Rozpoczynam ładowanie słów do tablicy...")
-    with open("przykladowe.txt") as file:
+    with open("slowa.txt") as file:
         while (line := file.readline().rstrip()):
             if len(line) >= 5:
                 Lista_slow_do_losowania.append(line)
@@ -671,7 +672,18 @@ def Gra(Bierzaca_gra_gracze, Ilosc_w_grze):
     #zapis w funkcji Czasomierz()
 
 if __name__=="__main__":
-    print("Server up")
+    if (len(sys.argv)-1) < 1:
+        print("python serwer_nowy.py [lok/ser]")
+    ktore = sys.argv[1]
+    if ktore == "lok":
+        print("Serwer działa na loopbacku")
+        IP = '127.0.0.1'
+        PORT = 12345 
+    else:
+        print("Serwer działa na stronce")
+        IP = '136.243.156.120'
+        PORT = 12186
+    print("Serwer up")
     Zaladuj_slowa()
     start_new_thread(Czasomierz,())
     while True:

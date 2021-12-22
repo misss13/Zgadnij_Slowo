@@ -11,8 +11,8 @@ Gra pisana jako projekt na przedmiot Systemy Operacyjne. Na początku jej pliki 
  - slowa.txt
  - shadow.txt
  - ustawienia.ini
-### Pliki opcjonalne
  - punkty.txt
+### Pliki opcjonalne
  - punkty.json
  - kolejka.json
 

@@ -2,23 +2,48 @@ import socket
 import time
 import sys
 from random import choice
-from random import randrange
 
-if (len(sys.argv)-1) < 1:
-    print("python client.py [lok/ser]")
+"""Inicjacja klienta"""
+Lista_slow_do_losowania = [] #zawiera słowa losowane przez użytkowników
 
+if (len(sys.argv)-1) < 3:
+    print("python client.py [lok/ser] [login] [haslo]")
 ktore = sys.argv[1]
+login = sys.argv[2]
+haselo = sys.argv[3]
 if ktore == "lok":
-
-    IP = '127.0.0.1' #'136.243.156.120' #IP SERWERA
-    PORT = 12345 #12186 #PORT
+    IP = '127.0.0.1'
+    PORT = 12345
 else:
-    IP = '136.243.156.120' #IP SERWERA '127.0.0.1' #'
-    PORT = 12186 #PORT 12345 `
-
+    IP = '136.243.156.120'
+    PORT = 12186 
 
 """Slownik alfabetu"""
 alfabet = ['a', 'ą', 'b', 'c', 'ć', 'd', 'e','ę', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'ł', 'm', 'n', 'ń', 'o', 'ó', 'p', 'q', 'r', 's', 'ś', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'ż', 'ź']
+
+
+
+def Zaladuj_slowa():
+    """Ładuje 5 lub więcej literowe słowa do tablicy Lista_slow_do_losowania, zabiera ok 200Mb ramu i trwa 4s"""
+    global Lista_slow_do_losowania
+
+    print("Rozpoczynam ładowanie słów do tablicy...")
+    with open("slowa.txt") as file:
+        while (line := file.readline().rstrip()):
+            if len(line) >= 5:
+                Lista_slow_do_losowania.append(line)
+    print("Zakonczono ładowanie słów do tablicy")
+
+
+def Zgadnij_slowo():
+    """Losuje slowo z tablicy Lista_slow_do_losowania"""
+    global Lista_slow_do_losowania
+
+    if len(Lista_slow_do_losowania) < 1:
+        return False
+    else:
+        return choice(Lista_slow_do_losowania)
+
 
 def Otrzymaj(client):
     """Otrzymuje wiadomosc dekoduje i usuwa znaki konca linii"""
@@ -52,20 +77,8 @@ def Otrzymaj(client):
 
 def Rozlacz_ladnie(client):
     """Rozłącz klienta"""
-    time.sleep(2)
     client.close()
 
-def Zgadnij_slowo():
-    """Funkcja zwraca dowolne słowo"""
-    file = open('slowa.txt', 'r')
-    a = randrange(200)
-    i=0
-    lines = file.readlines()
-    for i, slowo in enumerate(lines):
-        if i == a:
-            return slowo.rstrip()
-        i+=1
-    file.close()
 
 def Zgadnij_literke():
     global alfabet
@@ -75,14 +88,19 @@ def Zgadnij_literke():
     
 def Logowanie(klient):
     """Funkcja loguje klienta na serwer"""
-    index = input("Podaj nr indexu: ")
+    global login
+    global haselo
+    
+    time.sleep(0.2)
+    index = login
     try:    
         klient.send(str.encode(index+"\n"))
     except:
         #klient chyba się rozłączył dla pewności rozłączam
         Rozlacz_ladnie(klient)
         return False
-    haslo = input("Podaj hasło: ")
+    time.sleep(0.2)
+    haslo = haselo
     try:
         klient.send(str.encode(haslo+"\n"))
     except:
@@ -92,6 +110,7 @@ def Logowanie(klient):
     return True
 
 
+Zaladuj_slowa()
 print(Zgadnij_slowo())
 print(Zgadnij_literke())
 
@@ -144,20 +163,22 @@ while(True):
         print("Runda: %d" %i)
         literka = ""
         slowko = ""
-        znak = input("Podaj literke [+] [enter] [literka]/ slowo [=] [enter] [slowo]: ")
-        tresc = input()
-        if znak == "+": 
+        print("Podaj literke [+] [enter] [literka]/ slowo [=] [enter] [slowo]: ")
+        time.sleep(0.2)
+        znak = choice(["+", "-"])
+        if znak == "+":
             czy_litera = 1 #literka
-            if len(literka)>=1:
-                literka = tresc[0]
-            else:
-                literka = Zgadnij_literke()
+            tresc = Zgadnij_literke()
+            literka = tresc
             znak = "+"
         else:
             czy_litera = 0 #nie, slowo
+            tresc = Zgadnij_slowo()
             slowko = tresc
             znak = "="
-
+        print()
+        print("Wysyłam: " + str(znak) + str(tresc)+ "\n")
+        time.sleep(0.2)
         try:
             client.send(str.encode(znak + "\n" + tresc+ "\n"))
         except:
@@ -250,17 +271,17 @@ while(True):
                     if response == False:
                         break
                     print("Koniec gry! - 2s czekam")
-                    time.sleep(2)
+                    time.sleep(1)
                     break
                 else:
                     #nie
                     print("Literki niezgadnięte: ")
                     print(alfabet_gra)
+                    time.sleep(0.2)
                 continue
         else:
             #jakis niezrozumialy ciąg rozłączam
             Rozlacz_ladnie(client)
             break
-
-    continue
     client.close()
+    continue
