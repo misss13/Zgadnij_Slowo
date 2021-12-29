@@ -38,11 +38,11 @@ def Zaladuj_slowa():
 def Zgadnij_slowo():
     """Losuje slowo z tablicy Lista_slow_do_losowania"""
     global Lista_slow_do_losowania
+    try:
+        a = choice(Lista_slow_do_losowania)
+    except:
+        a = "ananas"
 
-    if len(Lista_slow_do_losowania) < 1:
-        return "anananas"
-    else:
-        return choice(Lista_slow_do_losowania)
 
 
 def Otrzymaj(client):
