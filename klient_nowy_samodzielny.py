@@ -284,4 +284,5 @@ while(True):
             Rozlacz_ladnie(client)
             break
     client.close()
+    del client
     continue

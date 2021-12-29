@@ -8,6 +8,7 @@ import os
 import random
 import configparser
 import sys
+import gc
 from typing import List
 from _thread import *
 from datetime import datetime
@@ -37,7 +38,6 @@ Slownik_gier = {} # id_gry:1 - zgadnieto slowo/ 0-niezgadnieto CZYSCIC!!!!!
 Slownik_logow = {} #id_gry:tresc CZYSIC!!!!!
 Slownik_nazwa_gra = {} #nazwa_uzy:id_gry stałe
 Lista_slow_do_losowania = [] #zawiera słowa losowane przez użytkowników
-
 
 def Zaladuj_slowa():
     """Ładuje 5 lub więcej literowe słowa do tablicy Lista_slow_do_losowania, zabiera ok 200Mb ramu i trwa 4s"""
@@ -97,8 +97,10 @@ def Prasowanie():
         print("Błąd w parsowaniu")
         return False
     if czyszczacz == 1: #czysci pamiec
-        Slownik_logow = {}
-        Slownik_gier = {}
+        print("Wyczyszczono pamiec")
+        Slownik_logow.clear()
+        Slownik_gier.clear()
+        gc.collect()
 
     if uzytkownik != 0: #usuwanie komus punktow o wielkosc uzytkownik_usuwanie
         try:
@@ -113,10 +115,9 @@ def Zapisz_logi_gry(id_gry):
     global Slownik_logow
     tresc = Slownik_logow[id_gry]
     try:
-        a = time.asctime(time.localtime(time.time()))
-        a = a.replace(" ","_")
+        a = datetime.now().strftime("%d-%m-%Y_%H:%M:%S_")
         sciezka_zapisu = "./logi_gry"
-        nazwa_gry = str(id_gry) + a + ".log"
+        nazwa_gry = a + str(id_gry) + ".log"
         lokalizacja = os.path.join(sciezka_zapisu, nazwa_gry)
         plik = open(lokalizacja, "w")
         plik.write(tresc)
@@ -345,13 +346,13 @@ def Obsluga_klienta(client, adres):
             if t.is_alive():
                 #jeszcze nie skonczono wpisywania <-> kończe wątek i wyrzucam gracza
                 e.set()
-                Slownik_logow[id_gry] += "["+ datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + "] " + "Gracz: " +str(nazwa_uzy)+ " rozlaczam minęło 10s\n"
+                Slownik_logow[id_gry] += "["+ datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + "] " + "Gracz: " +str(nazwa_uzy)+ " rozlaczam minelo 10s\n"
                 try:
                     #rozlaczam po 10s 
                     Rozlacz_ladnie(client, nazwa_uzy)
                     return False
                 except:
-                    Slownik_logow[id_gry] += "["+ datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + "] " + "Gracz: " +str(nazwa_uzy)+ "blad - klient rozłączony\n"
+                    Slownik_logow[id_gry] += "["+ datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + "] " + "Gracz: " +str(nazwa_uzy)+ "blad - klient rozlaczony\n"
                     print("błąd w obsłudze klienta - rozlacz ladnie - rozłączony albo słownik wybuchł")
                     return False
             else:
@@ -430,7 +431,7 @@ def Obsluga_klienta(client, adres):
                             client.send(str.encode("=\n"))
                             licznik_punktow = nie_odgadniete_literki.count(literka)
                             Slownik_punktow[nazwa_uzy] += licznik_punktow
-                            Slownik_logow[id_gry] += "["+ datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + "] " + "Gracz: " +str(nazwa_uzy)+ " odgadl literke: "+ literka+" dostał punktow: "+str(licznik_punktow)+"\n"
+                            Slownik_logow[id_gry] += "["+ datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + "] " + "Gracz: " +str(nazwa_uzy)+ " odgadl literke: "+ literka+" dostal punktow: "+str(licznik_punktow)+"\n"
                             #wyrzucam wszystkie zgadniete literki
                             nie_odgadniete_literki = nie_odgadniete_literki.replace(literka, "")
                             if nie_odgadniete_literki == "":
@@ -677,8 +678,8 @@ if __name__=="__main__":
         print("Serwer działa na stronce")
         host = '136.243.156.120'
         port = 12186
-    
     ServerSocket = socket.socket(family = socket.AF_INET, type = socket.SOCK_STREAM) 
+    ServerSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
         ServerSocket.bind((host, port))
     except socket.error as e:
@@ -692,6 +693,6 @@ if __name__=="__main__":
         client, adres = ServerSocket.accept()
         print (adres[0] + " połączony")
         start_new_thread(Obsluga_klienta,(client, adres))
-        time.sleep(2)
+        time.sleep(0.2)
 client.close()
 ServerSocket.close()
