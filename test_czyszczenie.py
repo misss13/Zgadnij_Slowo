@@ -1,4 +1,4 @@
-import gc
+"""import gc
 import time
 import json
 
@@ -39,3 +39,58 @@ if __name__=="__main__":
     Update_Slownik_hasel()
     print(Slownik_hasel)
     time.sleep(10)
+"""
+########################### slownik w slowniku {id_gry:{nazwa_urzy:punkty}}
+"""Slownik_punktow = {}
+id_gry = 1
+id_gry2 = 2
+
+Slownik_punktow[id_gry] = {}
+Slownik_punktow[id_gry2] = {}
+
+#gra 1
+Slownik_punktow[id_gry]["123"] = 0
+Slownik_punktow[id_gry]["123"] += 1
+Slownik_punktow[id_gry]["1234"] = 0
+Slownik_punktow[id_gry]["1234"] += 1
+
+#gra 2
+Slownik_punktow[id_gry2]["123"] = 2
+
+print(Slownik_punktow[id_gry])
+print(Slownik_punktow)
+del Slownik_punktow[id_gry]["123"]
+print(Slownik_punktow)
+"""
+######################### testowanie funkcji losujacej
+import time
+import random
+Lista_slow_do_losowania = []
+
+def Zaladuj_slowa():
+    """Ładuje 5 lub więcej literowe słowa do tablicy Lista_slow_do_losowania, zabiera ok 200Mb ramu i trwa 4s"""
+    global Lista_slow_do_losowania
+
+    print("Rozpoczynam ładowanie słów do tablicy...")
+    with open("slowa.txt") as file:
+        while (line := file.readline().rstrip()):
+            if len(line) >= 5:
+                Lista_slow_do_losowania.append(line)
+    print("Zakonczono ładowanie słów do tablicy")
+
+
+def Losuj_slowo():
+    """Losuje slowo z tablicy Lista_slow_do_losowania"""
+    global Lista_slow_do_losowania
+
+    if len(Lista_slow_do_losowania) <= 1:
+        return "anananas"
+    else:
+        return random.choice(Lista_slow_do_losowania)
+
+
+Zaladuj_slowa()
+while True:
+    a = Losuj_slowo()
+    print(a)
+    time.sleep(0.5)

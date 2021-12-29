@@ -40,7 +40,7 @@ def Zgadnij_slowo():
     global Lista_slow_do_losowania
 
     if len(Lista_slow_do_losowania) < 1:
-        return False
+        return "anananas"
     else:
         return choice(Lista_slow_do_losowania)
 
@@ -137,6 +137,7 @@ while(True):
         print("logowanie powiodło się")
     else:
         print("logowanie nie powiodło się - czekam 2s i próbuje się znowu połączyć")
+        time.sleep(2)
         Rozlacz_ladnie(client)
         continue
 

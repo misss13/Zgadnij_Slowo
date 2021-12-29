@@ -34,8 +34,8 @@ Czas_do_rundy = 30
 Slownik_slow = {}
 Slownik_punktow = {} #ilosc punktow rundy
 Slownik_punktow_plik = {} #z pliku ogólna ilosc punktow
-Slownik_gier = {} # id_gry:1 - zgadnieto slowo/ 0-niezgadnieto CZYSCIC!!!!! <-> czyszczone po zapisie
-Slownik_logow = {} #id_gry:tresc CZYSIC!!!!! <-> czyszczone po zapisie
+Slownik_gier = {} # id_gry:1 - zgadnieto slowo/ 0-niezgadnieto CZYSCIC!!!!!
+Slownik_logow = {} #id_gry:tresc CZYSIC!!!!!
 Slownik_nazwa_gra = {} #nazwa_uzy:id_gry stałe
 Lista_slow_do_losowania = [] #zawiera słowa losowane przez użytkowników
 
@@ -56,7 +56,7 @@ def Losuj_slowo():
     global Lista_slow_do_losowania
 
     if len(Lista_slow_do_losowania) <= 1:
-        return "anananas"
+        return False
     else:
         return random.choice(Lista_slow_do_losowania)
 
@@ -126,18 +126,6 @@ def Zapisz_logi_gry(id_gry):
     except:
         print("Błąd przy zapisie - Zapisz_logi_gry")
         return False
-
-
-def Usun_logi_gry_i_slownik_gier(id_gry):
-    """Usuwa logi danej gry ze słownika z logami gier. Zwraca True gdy powiódł się zapis"""
-    global Slownik_logow
-    global Slownik_gier
-    try:
-        del Slownik_logow[id_gry]
-        del Slownik_gier[id_gry]
-        gc.collect()
-    except:
-        print("Blad usuwania logow gry albo slownika - gra o ponadym id nie istnieje")
 
 
 def Kolejka_graczy_json():
@@ -321,6 +309,7 @@ def Obsluga_klienta(client, adres):
         Kolejka_graczy.append(nazwa_uzy)
         Ilosc_graczy +=1
         Slownik_slow[nazwa_uzy] = ""
+        Slownik_punktow[nazwa_uzy] = 0 #nie problem między rundami 300s przerwy <-> tylko jeden urzytkownik w kolejce
 
         while(True):
             if(Slownik_slow[nazwa_uzy] != ""):
@@ -329,7 +318,7 @@ def Obsluga_klienta(client, adres):
         
         #id_gry do ktorej nalezy klient
         id_gry = Slownik_nazwa_gra[nazwa_uzy]
-        Slownik_punktow[id_gry][nazwa_uzy] = 0 
+
 
         #tego uzywam do zliczania punktow ze slowa
         slowo = Slownik_slow[nazwa_uzy]
@@ -399,8 +388,8 @@ def Obsluga_klienta(client, adres):
                             break
                         try:
                             client.send(str.encode("=\n"))
-                            Slownik_punktow[id_gry][nazwa_uzy] += 5
-                            client.send(str.encode(str(Slownik_punktow[id_gry][nazwa_uzy])+"\n"))
+                            Slownik_punktow[nazwa_uzy] += 5
+                            client.send(str.encode(str(Slownik_punktow[nazwa_uzy])+"\n"))
                             client.send(str.encode("?\n"))
                             Rozlacz_ladnie(client, nazwa_uzy)
                             Slownik_gier[id_gry] = 1 #zgadnięto słowo na koncu żeby klient nie otrzymal 2 razy tego samego
@@ -441,14 +430,14 @@ def Obsluga_klienta(client, adres):
                             slowo_tymczasowe = slowo #je wysle uzytkownikowi
                             client.send(str.encode("=\n"))
                             licznik_punktow = nie_odgadniete_literki.count(literka)
-                            Slownik_punktow[id_gry][nazwa_uzy] += licznik_punktow
+                            Slownik_punktow[nazwa_uzy] += licznik_punktow
                             Slownik_logow[id_gry] += "["+ datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + "] " + "Gracz: " +str(nazwa_uzy)+ " odgadl literke: "+ literka+" dostal punktow: "+str(licznik_punktow)+"\n"
                             #wyrzucam wszystkie zgadniete literki
                             nie_odgadniete_literki = nie_odgadniete_literki.replace(literka, "")
                             if nie_odgadniete_literki == "":
                                 #zgadnieto slowo
                                 Slownik_gier[id_gry] = 1
-                                client.send(str.encode(str(Slownik_punktow[id_gry][nazwa_uzy])+"\n"))
+                                client.send(str.encode(str(Slownik_punktow[nazwa_uzy])+"\n"))
                                 client.send(str.encode("?\n"))
                                 Rozlacz_ladnie(client, nazwa_uzy)
                             #zamiana na 0/1 ciąg 1-zgadnieta literka reszte rzeczy wyrzucam ze stringa
@@ -501,25 +490,6 @@ def Obsluga_klienta(client, adres):
         return True
 
 
-def Wez_slownik_punkty():
-    """Bierze aktualne wyniki z pliku"""
-    global Slownik_punktow_plik
-    Slownik_punktow_plik = json.load(open("punkty.txt"))
-
-
-def Zapis_slownika_punkty():
-    """Zapisuje aktualne wyniki do plików, punkty.txt oraz punkty.json"""
-    global Slownik_punktow_plik
-    do_zapisu = []
-    try:
-        json.dump(Slownik_punktow_plik, open("punkty.txt", 'w'))
-        for nazwa_uzy in Slownik_punktow_plik:
-            do_zapisu.append([ nazwa_uzy, Slownik_punktow_plik[nazwa_uzy] ])
-        json.dump(do_zapisu, open("punkty.json", 'w'))
-    except:
-        print("Błąd w zapisie punktów, slownik się posypoał")
-
-
 def Czasomierz():
     """Oblicza czas między rundami oraz sprawdza ilosc graczy w kolejce - jeśli 10 rozpoczyna gre albo czas"""
     global Ilosc_graczy
@@ -529,7 +499,6 @@ def Czasomierz():
     global MAX_UZYTKOWNIKOW
     global MIN_UZYTKOWNIKOW
 
-    Wez_slownik_punkty()
     print("|################|")
     i=0
     ile_razy_kratka = 1
@@ -590,18 +559,37 @@ def Broadcast_hinta(tablica_klientow, hint: str):
             continue
 
 
-def Broadcast_punktow(Bierzaca_gra_gracze, id_gry):
+def Broadcast_punktow(Bierzaca_gra_gracze):
     """Wysyłanie do wszystkich wiadomości z iloscia zdobytych punktow"""
     global Slownik_punktow
     for nazwa_uzy in Bierzaca_gra_gracze:
         try:
             klient = Slownik_nazwa_klient[nazwa_uzy]
             klient.send(str.encode(str(Slownik_slow[nazwa_uzy]) + "\n"))
-            klient.send(str.encode(str(Slownik_punktow[id_gry][nazwa_uzy]) + "\n"))
+            klient.send(str.encode(str(Slownik_punktow[nazwa_uzy]) + "\n"))
             klient.send(str.encode("?\n"))
         except:
-            print("błąd - nie można wysłać - Broadcast_punktow - klient rozłączony: " + str(nazwa_uzy))
+            print("błąd - Broadcast_punktow ")
             continue
+
+    
+def Wez_slownik_punkty():
+    """Bierze aktualne wyniki z pliku"""
+    global Slownik_punktow_plik
+    Slownik_punktow_plik = json.load(open("punkty.txt"))
+
+
+def Zapis_slownika_punkty():
+    """Zapisuje aktualne wyniki do plików, punkty.txt oraz punkty.json"""
+    global Slownik_punktow_plik
+    do_zapisu = []
+    try:
+        json.dump(Slownik_punktow_plik, open("punkty.txt", 'w'))
+        for nazwa_uzy in Slownik_punktow_plik:
+            do_zapisu.append([ nazwa_uzy, Slownik_punktow_plik[nazwa_uzy] ])
+        json.dump(do_zapisu, open("punkty.json", 'w'))
+    except:
+        print("Błąd w zapisie punktów, slownik się posypoał")
 
 
 def Gra(Bierzaca_gra_gracze, Ilosc_w_grze):
@@ -619,7 +607,6 @@ def Gra(Bierzaca_gra_gracze, Ilosc_w_grze):
     #id_gry
     id_gry = Numery_gier
     Numery_gier+=1
-    Slownik_punktow[id_gry] = {}
     
     Slownik_gier[id_gry] = 0 #zmiana po stronie grzcza TODO
     Slownik_logow[id_gry] = "["+ datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + "] " + "Zaczeto gre o id: " + str(id_gry) +"\n"
@@ -650,7 +637,7 @@ def Gra(Bierzaca_gra_gracze, Ilosc_w_grze):
             break
         if Czy_zgadnieto_slowo(id_gry) == 1:
             #slowo zostalo zgadniete
-            Broadcast_punktow(Bierzaca_gra_gracze, id_gry)
+            Broadcast_punktow(Bierzaca_gra_gracze)
             break
         elif Czy_zgadnieto_slowo(id_gry) == (-1):
             #błąd slownika
@@ -661,34 +648,21 @@ def Gra(Bierzaca_gra_gracze, Ilosc_w_grze):
     print("Koniec gry")
     # Gra staje się zombie czeka 10s na zakończenie gier wszystkich graczy a nastepnie dokonuje operacji zapisu do pliku
     #Nieaktualne ^
-    for nazwa_uzy in Slownik_punktow[id_gry]:
-        Slownik_logow[id_gry] += "["+ datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + "] " + "Gra dla "+str(nazwa_uzy)+" zakonczona wynikiem: " + str(Slownik_punktow[id_gry][nazwa_uzy]) +"\n"
-    
+    for nazwa_uzy in Slownik_punktow:
+        Slownik_logow[id_gry] += "["+ datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + "] " + "Gra dla "+str(nazwa_uzy)+" zakonczona wynikiem: " + str(Slownik_punktow[nazwa_uzy]) +"\n"
     Zapisz_logi_gry(id_gry)
-    Usun_logi_gry_i_slownik_gier(id_gry) #mniej użycia ramu
-
+    
+    Wez_slownik_punkty()
     for nazwa_uzy in Bierzaca_gra_gracze: #jeden gracz w jednej grze po jej zakonczeniui tak musi czekac w kolejce 2s
         if nazwa_uzy not in Slownik_punktow_plik:
             Slownik_punktow_plik[nazwa_uzy] = 0
-        try:
-            Slownik_punktow_plik[nazwa_uzy] += Slownik_punktow[id_gry][nazwa_uzy]
-        except:
-            print("brak uzytkownika: " + str(nazwa_uzy) + "w slowniku punktow - pomijam")
-            continue
+        Slownik_punktow_plik[nazwa_uzy] += Slownik_punktow[nazwa_uzy] 
     print(Slownik_punktow_plik)
-    print(Slownik_punktow[id_gry])
-
-    for nazwa_uzy in Bierzaca_gra_gracze: # RAM friendly
-        try:
-            del Slownik_punktow[id_gry][nazwa_uzy]
-        except:
-            print("brak uzytkownika: " + str(nazwa_uzy) + "w slowniku punktow - pomijam")
-            continue
-    del Slownik_punktow[id_gry]
-
+    print(Slownik_punktow)
     #nawet jesli uzytkownik sie rozłączy punkty zostaną dodane
     #aktualizacja slownika dla kazdego gracza w grze <-> dodaje do kolejki zapisu
     Kolejka_zapisu.append(id_gry)
+    Slownik_gier.pop(id_gry)
     #zapis w funkcji Czasomierz()
 
 if __name__=="__main__":
@@ -719,6 +693,6 @@ if __name__=="__main__":
         client, adres = ServerSocket.accept()
         print (adres[0] + " połączony")
         start_new_thread(Obsluga_klienta,(client, adres))
-        time.sleep(0.05)
+        time.sleep(0.2)
 client.close()
 ServerSocket.close()
