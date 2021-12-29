@@ -9,6 +9,7 @@ import random
 import configparser
 import sys
 import gc
+import mmap
 from typing import List
 from _thread import *
 from datetime import datetime
@@ -19,7 +20,7 @@ Slownik_hasel = {}
 #'123123':'96cae35ce8a9b0244178bf28e4966c2ce1b8385723a96a6b838858cdd6ca0a1e' #haslo 123123
 #'000001': 'a7fda0b61e2047f0f1057d1f5f064c272fd5d490961c531f4df64b0dd354683a' #haslo 000001
 
-
+WSKAZNIK = 0
 ILOSC_RUND = 10
 MIN_UZYTKOWNIKOW = 2
 MAX_UZYTKOWNIKOW = 10
@@ -37,7 +38,7 @@ Slownik_punktow_plik = {} #z pliku ogólna ilosc punktow
 Slownik_gier = {} # id_gry:1 - zgadnieto slowo/ 0-niezgadnieto CZYSCIC!!!!! <-> czyszczone po zapisie
 Slownik_logow = {} #id_gry:tresc CZYSIC!!!!! <-> czyszczone po zapisie
 Slownik_nazwa_gra = {} #nazwa_uzy:id_gry stałe
-Lista_slow_do_losowania = [] #zawiera słowa losowane przez użytkowników
+Lista_slow_do_losowania = [] #uzywana do przetasowania tablicy nastepnie usuwana <-> RAM friendly
 
 def Zaladuj_slowa():
     """Ładuje 5 lub więcej literowe słowa do tablicy Lista_slow_do_losowania, zabiera ok 200Mb ramu i trwa 4s"""
@@ -51,14 +52,39 @@ def Zaladuj_slowa():
     print("Zakonczono ładowanie słów do tablicy")
 
 
-def Losuj_slowo():
-    """Losuje slowo z tablicy Lista_slow_do_losowania"""
+def Zapisz_slowa_mini():
+    """Tworzy plik z 5 lub więcej literowymi słowami dla mmapa oraz tasuje liste do zapisu 3 razy"""
     global Lista_slow_do_losowania
 
-    if len(Lista_slow_do_losowania) <= 1:
-        return "anananas"
-    else:
-        return random.choice(Lista_slow_do_losowania)
+    print("Rozpoczynam tasowanie słów do tablicy...")
+    for i in range(3):
+        random.shuffle(Lista_slow_do_losowania)
+    print("Potasowanych słów: " + str(len(Lista_slow_do_losowania)))
+
+    print("Zapisuje do pliku...")
+    file = open("slowa_mini.txt", "w")
+    for slowo in Lista_slow_do_losowania:
+        file.write(slowo + "\n")
+    file.close()
+    
+    print("Usuwam liste słow...")
+    del Lista_slow_do_losowania
+    gc.collect()
+
+
+def Losuj_slowo():
+    """Losowanie slowa bez uzycia RAM-u"""
+    global WSKAZNIK
+
+    with open("slowa_mini.txt", mode="r", encoding="utf-8") as file_obj:
+        with mmap.mmap(file_obj.fileno(), length=0, access=mmap.ACCESS_READ) as mmap_obj:
+            text = mmap_obj.readline()
+            for i in range(WSKAZNIK):
+                text = mmap_obj.readline()
+            WSKAZNIK += 1
+            if WSKAZNIK >= 3045268:
+                WSKAZNIK%=3045268
+            return text.decode().replace("\n", "")
 
 
 def Czy_zgadnieto_slowo(id_gry):
@@ -83,6 +109,7 @@ def Prasowanie():
     global Slownik_logow
     global Slownik_gier
     global Slownik_punktow
+
 
     config = configparser.ConfigParser()
     config.read('ustawienia.ini')
@@ -152,6 +179,7 @@ def Kolejka_graczy_json():
     except:
         print("Błąd zapoisu - Kolejka_graczy_json")
         return False
+
 
 """Słownik na hinty"""
 Slownik_hint = { 
@@ -714,6 +742,7 @@ if __name__=="__main__":
     
     print("Serwer up")
     Zaladuj_slowa()
+    Zapisz_slowa_mini()
     start_new_thread(Czasomierz,())
     while True:
         client, adres = ServerSocket.accept()

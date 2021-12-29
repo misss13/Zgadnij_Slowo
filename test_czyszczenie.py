@@ -63,9 +63,13 @@ del Slownik_punktow[id_gry]["123"]
 print(Slownik_punktow)
 """
 ######################### testowanie funkcji losujacej
+import mmap
 import time
 import random
+import gc
+
 Lista_slow_do_losowania = []
+WSKAZNIK = 0
 
 def Zaladuj_slowa():
     """Ładuje 5 lub więcej literowe słowa do tablicy Lista_slow_do_losowania, zabiera ok 200Mb ramu i trwa 4s"""
@@ -79,18 +83,44 @@ def Zaladuj_slowa():
     print("Zakonczono ładowanie słów do tablicy")
 
 
-def Losuj_slowo():
-    """Losuje slowo z tablicy Lista_slow_do_losowania"""
+def Zapisz_slowa_mini():
+    """Tworzy plik z 5 lub więcej literowymi słowami dla mmapa oraz losuje słowa 3 razy"""
     global Lista_slow_do_losowania
 
-    if len(Lista_slow_do_losowania) <= 1:
-        return "anananas"
-    else:
-        return random.choice(Lista_slow_do_losowania)
+    print("Rozpoczynam tasowanie słów do tablicy...")
+    for i in range(3):
+        random.shuffle(Lista_slow_do_losowania)
+    print("Potasowanych słów: " + str(len(Lista_slow_do_losowania)))
 
+    print("Zapisuje do pliku...")
+    file = open("slowa_mini.txt", "w")
+    for slowo in Lista_slow_do_losowania:
+        file.write(slowo + "\n")
+    file.close()
+    
+    print("Usuwam liste słow...")
+    del Lista_slow_do_losowania
+    gc.collect()
+
+
+def Losuj_slowo():
+    """Losowanie slowa bez uzycia RAM-u"""
+    global WSKAZNIK
+
+    with open("slowa_mini.txt", mode="r", encoding="utf-8") as file_obj:
+        with mmap.mmap(file_obj.fileno(), length=0, access=mmap.ACCESS_READ) as mmap_obj:
+            text = mmap_obj.readline()
+            for i in range(WSKAZNIK):
+                text = mmap_obj.readline()
+            WSKAZNIK += 1
+            if WSKAZNIK >= 3045268:
+                WSKAZNIK%=3045268
+            print(text.decode().replace("\n", ""))
+            return text.decode().replace("\n", "")
 
 Zaladuj_slowa()
-while True:
-    a = Losuj_slowo()
-    print(a)
-    time.sleep(0.5)
+Zapisz_slowa_mini()
+Losuj_slowo()
+print("czekam 10s")
+time.sleep(10)
+Losuj_slowo()
