@@ -1,0 +1,1 @@
+echo "działam sb" > /home/Balalaika/tutu
