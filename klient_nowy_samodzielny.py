@@ -1,10 +1,14 @@
 import socket
 import time
+import mmap
 import sys
 from random import choice
+import random
 
 """Inicjacja klienta"""
-Lista_slow_do_losowania = [] #zawiera słowa losowane przez użytkowników
+
+WSKAZNIK = random.randrange(30)
+WSKAZNIK_ALFA = 0
 
 if (len(sys.argv)-1) < 3:
     print("python client.py [lok/ser] [login] [haslo]")
@@ -19,30 +23,24 @@ else:
     PORT = 12186 
 
 """Slownik alfabetu"""
-alfabet = ['a', 'ą', 'b', 'c', 'ć', 'd', 'e','ę', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'ł', 'm', 'n', 'ń', 'o', 'ó', 'p', 'q', 'r', 's', 'ś', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'ż', 'ź']
+alfabet = ['a', 'ą', 'b', 'c', 'ć', 'd', 'e', 'ę', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'ł', 'm', 'n', 'ń', 'o', 'ó', 'p', 'q', 'r', 's', 'ś', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'ż', 'ź']
+szuffle = ['a', 'ą', 'b', 'c', 'ć', 'd', 'e', 'ę', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'ł', 'm', 'n', 'ń', 'o', 'ó', 'p', 'q', 'r', 's', 'ś', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'ż', 'ź']
+random.shuffle(szuffle)
 
 
+def Losuj_slowo():
+    """Losowanie slowa bez uzycia RAM-u"""
+    global WSKAZNIK
 
-def Zaladuj_slowa():
-    """Ładuje 5 lub więcej literowe słowa do tablicy Lista_slow_do_losowania, zabiera ok 200Mb ramu i trwa 4s"""
-    global Lista_slow_do_losowania
-
-    print("Rozpoczynam ładowanie słów do tablicy...")
-    with open("slowa.txt") as file:
-        while (line := file.readline().rstrip()):
-            if len(line) >= 5:
-                Lista_slow_do_losowania.append(line)
-    print("Zakonczono ładowanie słów do tablicy")
-
-
-def Zgadnij_slowo():
-    """Losuje slowo z tablicy Lista_slow_do_losowania"""
-    global Lista_slow_do_losowania
-    try:
-        a = choice(Lista_slow_do_losowania)
-    except:
-        a = "ananas"
-
+    with open("slowa_mini.txt", mode="r", encoding="utf-8") as file_obj:
+        with mmap.mmap(file_obj.fileno(), length=0, access=mmap.ACCESS_READ) as mmap_obj:
+            text = mmap_obj.readline()
+            for i in range(WSKAZNIK):
+                text = mmap_obj.readline()
+            WSKAZNIK += 1
+            if WSKAZNIK >= 3045268:
+                WSKAZNIK%=3045268
+            return text.decode().replace("\n", "")
 
 
 def Otrzymaj(client):
@@ -81,9 +79,12 @@ def Rozlacz_ladnie(client):
 
 
 def Zgadnij_literke():
-    global alfabet
     """Funckja zwraca literke"""
-    return choice(alfabet)
+    global szuffle
+    global WSKAZNIK_ALFA
+    WSKAZNIK_ALFA+=1
+    WSKAZNIK_ALFA%=35
+    return szuffle[WSKAZNIK_ALFA]
 
     
 def Logowanie(klient):
@@ -110,8 +111,7 @@ def Logowanie(klient):
     return True
 
 
-Zaladuj_slowa()
-print(Zgadnij_slowo())
+print(Losuj_slowo())
 print(Zgadnij_literke())
 
 
@@ -174,7 +174,7 @@ while(True):
             znak = "+"
         else:
             czy_litera = 0 #nie, slowo
-            tresc = Zgadnij_slowo()
+            tresc = Losuj_slowo()
             slowko = tresc
             znak = "="
         print()
@@ -250,8 +250,7 @@ while(True):
                         slowa_zgadywane[i] = literka
                 print(slowa_zgadywane)
                 if literka in alfabet_gra:
-                    alfabet_gra.remove(literka) #nie powinno być takiej sytuacji ale just in case
-                    print("SERWER POPSUTY")
+                    alfabet_gra.remove(literka)
     
                 #sprawdzam czy znalazłam wszystkie literki
                 czy_koniec = 0

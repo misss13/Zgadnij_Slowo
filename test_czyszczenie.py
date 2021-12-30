@@ -63,7 +63,7 @@ del Slownik_punktow[id_gry]["123"]
 print(Slownik_punktow)
 """
 ######################### testowanie funkcji losujacej
-import mmap
+"""import mmap
 import time
 import random
 import gc
@@ -72,7 +72,7 @@ Lista_slow_do_losowania = []
 WSKAZNIK = 0
 
 def Zaladuj_slowa():
-    """Ładuje 5 lub więcej literowe słowa do tablicy Lista_slow_do_losowania, zabiera ok 200Mb ramu i trwa 4s"""
+    
     global Lista_slow_do_losowania
 
     print("Rozpoczynam ładowanie słów do tablicy...")
@@ -84,7 +84,7 @@ def Zaladuj_slowa():
 
 
 def Zapisz_slowa_mini():
-    """Tworzy plik z 5 lub więcej literowymi słowami dla mmapa oraz losuje słowa 3 razy"""
+    
     global Lista_slow_do_losowania
 
     print("Rozpoczynam tasowanie słów do tablicy...")
@@ -104,7 +104,7 @@ def Zapisz_slowa_mini():
 
 
 def Losuj_slowo():
-    """Losowanie slowa bez uzycia RAM-u"""
+    
     global WSKAZNIK
 
     with open("slowa_mini.txt", mode="r", encoding="utf-8") as file_obj:
@@ -123,4 +123,20 @@ Zapisz_slowa_mini()
 Losuj_slowo()
 print("czekam 10s")
 time.sleep(10)
-Losuj_slowo()
+Losuj_slowo()"""
+
+import random
+WSKAZNIK_ALFA = 0
+szuffle = ['a', 'ą', 'b', 'c', 'ć', 'd', 'e', 'ę', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'ł', 'm', 'n', 'ń', 'o', 'ó', 'p', 'q', 'r', 's', 'ś', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'ż', 'ź']
+random.shuffle(szuffle)
+
+def Zgadnij_literke():
+    """Funckja zwraca literke"""
+    global szuffle
+    global WSKAZNIK_ALFA
+    WSKAZNIK_ALFA+=1
+    WSKAZNIK_ALFA%=35
+    return szuffle[WSKAZNIK_ALFA]
+
+while True:
+    print(Zgadnij_literke())
