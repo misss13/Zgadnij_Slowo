@@ -20,6 +20,8 @@ Slownik_hasel = {}
 #'123123':'96cae35ce8a9b0244178bf28e4966c2ce1b8385723a96a6b838858cdd6ca0a1e' #haslo 123123
 #'000001': 'a7fda0b61e2047f0f1057d1f5f064c272fd5d490961c531f4df64b0dd354683a' #haslo 000001
 
+DO_KONCA_GRY = 500
+CO_ILE_POLACZENIE = 0.01 #dla 1s mogże wyrzucać klientów <-> mniej lepiej
 WSKAZNIK = 0
 ILOSC_RUND = 10
 MIN_UZYTKOWNIKOW = 2
@@ -103,12 +105,14 @@ def Czy_zgadnieto_slowo(id_gry):
 def Prasowanie():
     """Co kilka s aktualizowana jest zawartosc ustawien"""
     global ILOSC_RUND
-    global Czas_do_rundy
+    global CO_ILE_POLACZENIE
+    global DO_KONCA_GRY
     global CZAS_NA_WPROWADZENIE_SLOWA
     global MAX_UZYTKOWNIKOW
     global Slownik_logow
     global Slownik_gier
     global Slownik_punktow
+    global Czas_do_rundy
 
 
     config = configparser.ConfigParser()
@@ -120,6 +124,8 @@ def Prasowanie():
         MAX_UZYTKOWNIKOW = int(config['serwer']['max_uzytkownikow'])
         czyszczacz = int(config['serwer']['czyszczacz'])
         uzytkownik = int(config['serwer']['uzytkownik'])
+        CO_ILE_POLACZENIE  = float(config['serwer']['co_ile_polaczenie'])
+        DO_KONCA_GRY = int(config['serwer']['do_konca_gry'])
     except:
         print("Błąd w parsowaniu")
         return False
@@ -573,7 +579,7 @@ def Czasomierz():
         animacja = round(Czas_do_rundy/30)
         #rysowanie pasku ładowania do kolejnej gry (jesli zbierze sie odp ilosc graczy)
         if i%animacja == 0:
-            print("|" + "#"*ile_razy_kratka + (16-ile_razy_kratka)*" " + "|" + str(Ilosc_graczy))
+            print("|" + "#"*ile_razy_kratka + (16-ile_razy_kratka)*" " + "|" + str(CO_ILE_POLACZENIE))
             print(Kolejka_graczy)
             ile_razy_kratka += 1
 
@@ -643,6 +649,7 @@ def Gra(Bierzaca_gra_gracze, Ilosc_w_grze):
     global Kolejka_zapisu
     global Slownik_logow #TODO
     global Slownik_nazwa_gra
+    global DO_KONCA_GRY
 
     #id_gry
     id_gry = Numery_gier
@@ -674,7 +681,7 @@ def Gra(Bierzaca_gra_gracze, Ilosc_w_grze):
     #obsluga 10 rund po stronie klienta
     do_konca = 0
     while True:
-        if do_konca >= 100:
+        if do_konca >= DO_KONCA_GRY:
             break
         if Czy_zgadnieto_slowo(id_gry) == 1:
             #slowo zostalo zgadniete
@@ -748,6 +755,6 @@ if __name__=="__main__":
         client, adres = ServerSocket.accept()
         print (adres[0] + " połączony")
         start_new_thread(Obsluga_klienta,(client, adres))
-        time.sleep(0.05)
+        time.sleep(CO_ILE_POLACZENIE)
 client.close()
 ServerSocket.close()
