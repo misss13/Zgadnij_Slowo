@@ -26,7 +26,7 @@ ILOSC_RUND = 10
 MIN_UZYTKOWNIKOW = 2
 MAX_UZYTKOWNIKOW = 10
 NIESKONCZONOSC_POLACZEN = 100
-CZAS_NA_WPROWADZENIE_SLOWA = 6 #mabyc 2 #TODO usuwam
+CZAS_NA_WPROWADZENIE_SLOWA = 2
 Ilosc_graczy = 0
 Numery_gier = 0
 Slownik_nazwa_klient = {} #stałe
@@ -63,7 +63,7 @@ def Zapisz_slowa_mini():
     print("Potasowanych słów: " + str(len(Lista_slow_do_losowania)))
 
     print("Zapisuje do pliku...")
-    file = open("slowa_mini.txt", "w")
+    file = open("/home/Balalaika/slowa_mini.txt", "w")
     for slowo in Lista_slow_do_losowania:
         file.write(slowo + "\n")
     file.close()
@@ -77,7 +77,7 @@ def Losuj_slowo():
     """Losowanie slowa bez uzycia RAM-u"""
     global WSKAZNIK
 
-    with open("slowa_mini.txt", mode="r", encoding="utf-8") as file_obj:
+    with open("/home/Balalaika/slowa_mini.txt", mode="r", encoding="utf-8") as file_obj:
         with mmap.mmap(file_obj.fileno(), length=0, access=mmap.ACCESS_READ) as mmap_obj:
             text = mmap_obj.readline()
             for i in range(WSKAZNIK):
@@ -106,6 +106,7 @@ def Prasowanie():
     global ILOSC_RUND
     global DO_KONCA_GRY
     global Czas_do_rundy
+    global CO_ILE_POLACZENIE
     global CZAS_NA_WPROWADZENIE_SLOWA
     global MAX_UZYTKOWNIKOW
     global Slownik_logow
@@ -123,6 +124,7 @@ def Prasowanie():
         czyszczacz = int(config['serwer']['czyszczacz'])
         uzytkownik = int(config['serwer']['uzytkownik'])
         DO_KONCA_GRY = int(config['serwer']['do_konca_gry'])
+        CO_ILE_POLACZENIE = float(config['serwer']['co_ile_polaczenie'])
     except:
         print("Błąd w parsowaniu")
         return False
@@ -224,14 +226,12 @@ Slownik_hint = {
 }
 
 
-
 class ThreadWithReturnValue(threading.Thread):
     def __init__(self, group=None, target=None, name=None,
                  args=(), kwargs={}, Verbose=None):
         threading.Thread.__init__(self, group, target, name, args, kwargs)
         self._return = None
     def run(self):
-        print(type(self._target))
         if self._target is not None:
             self._return = self._target(*self._args, **self._kwargs)
     def join(self, *args):
@@ -382,6 +382,7 @@ def Obsluga_klienta(client, adres):
                         print("błąd w obsłudze klienta - rozlacz ladnie")
                     return False
                 parse = parse.rstrip()
+                parse = parse.replace("\0","\n")
                 parse = parse.replace("\n","")
                 parse = parse.split(":")
                 wprowadzone_dane, czas = parse[0], parse[1]
@@ -476,12 +477,6 @@ def Obsluga_klienta(client, adres):
                             Slownik_logow[id_gry] += "["+ datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + "] " + "Gracz: " +str(nazwa_uzy)+ " odgadl literke: "+ literka+" dostal punktow: "+str(licznik_punktow)+"\n"
                             #wyrzucam wszystkie zgadniete literki
                             nie_odgadniete_literki = nie_odgadniete_literki.replace(literka, "")
-                            if nie_odgadniete_literki == "":
-                                #zgadnieto slowo
-                                Slownik_gier[id_gry] = 1
-                                client.send(str.encode(str(Slownik_punktow[id_gry][nazwa_uzy])+"\n"))
-                                client.send(str.encode("?\n"))
-                                Rozlacz_ladnie(client, nazwa_uzy)
                             #zamiana na 0/1 ciąg 1-zgadnieta literka reszte rzeczy wyrzucam ze stringa
                             slowo_tymczasowe = slowo_tymczasowe.replace(literka, "1")
                             slowo_tymczasowe = re.sub(re.compile("[a-z2-9ęóąśłżźćń]"), '0', slowo_tymczasowe)
@@ -561,17 +556,13 @@ def Czasomierz():
     global MIN_UZYTKOWNIKOW
 
     Wez_slownik_punkty()
-    print("|################|")
+    print("|#####################|")
     i=0
     ile_razy_kratka = 1
     trwanie_do_rundy = round(Czas_do_rundy / 2)
     animacja = round(Czas_do_rundy/30)
     while True:
         Prasowanie()
-        """line = sys.stdin.readline()
-        if line:
-            ServerSocket.close()
-            os._exit(1)"""
         trwanie_do_rundy = round(Czas_do_rundy / 2)
         animacja = round(Czas_do_rundy/30)
         #rysowanie pasku ładowania do kolejnej gry (jesli zbierze sie odp ilosc graczy)
@@ -637,7 +628,6 @@ def Broadcast_punktow(Bierzaca_gra_gracze, id_gry):
 
 def Gra(Bierzaca_gra_gracze, Ilosc_w_grze):
     """dostaje liste 10-2 graczy z kolejki odsługuje wszystkich naraz a później się wyłącza"""
-    global DO_KONCA_GRY
     global Slownik_slow
     global Slownik_punktow
     global Slownik_punktow_plik
@@ -647,6 +637,7 @@ def Gra(Bierzaca_gra_gracze, Ilosc_w_grze):
     global Kolejka_zapisu
     global Slownik_logow #TODO
     global Slownik_nazwa_gra
+    global DO_KONCA_GRY
 
     #id_gry
     id_gry = Numery_gier
