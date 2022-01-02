@@ -382,7 +382,7 @@ def Obsluga_klienta(client, adres):
                         print("błąd w obsłudze klienta - rozlacz ladnie")
                     return False
                 parse = parse.rstrip()
-                parse = parse.replace("\0","\n")
+                parse = parse.replace("\0","\n") #obsługa \0
                 parse = parse.replace("\n","")
                 parse = parse.split(":")
                 wprowadzone_dane, czas = parse[0], parse[1]
