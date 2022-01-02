@@ -20,6 +20,7 @@ Slownik_hasel = {}
 #'123123':'96cae35ce8a9b0244178bf28e4966c2ce1b8385723a96a6b838858cdd6ca0a1e' #haslo 123123
 #'000001': 'a7fda0b61e2047f0f1057d1f5f064c272fd5d490961c531f4df64b0dd354683a' #haslo 000001
 
+DO_KONCA_GRY = 100
 WSKAZNIK = 0
 ILOSC_RUND = 10
 MIN_UZYTKOWNIKOW = 2
@@ -62,7 +63,7 @@ def Zapisz_slowa_mini():
     print("Potasowanych słów: " + str(len(Lista_slow_do_losowania)))
 
     print("Zapisuje do pliku...")
-    file = open("/home/Balalaika/slowa_mini.txt", "w")
+    file = open("slowa_mini.txt", "w")
     for slowo in Lista_slow_do_losowania:
         file.write(slowo + "\n")
     file.close()
@@ -76,7 +77,7 @@ def Losuj_slowo():
     """Losowanie slowa bez uzycia RAM-u"""
     global WSKAZNIK
 
-    with open("/home/Balalaika/slowa_mini.txt", mode="r", encoding="utf-8") as file_obj:
+    with open("slowa_mini.txt", mode="r", encoding="utf-8") as file_obj:
         with mmap.mmap(file_obj.fileno(), length=0, access=mmap.ACCESS_READ) as mmap_obj:
             text = mmap_obj.readline()
             for i in range(WSKAZNIK):
@@ -103,6 +104,7 @@ def Czy_zgadnieto_slowo(id_gry):
 def Prasowanie():
     """Co kilka s aktualizowana jest zawartosc ustawien"""
     global ILOSC_RUND
+    global DO_KONCA_GRY
     global Czas_do_rundy
     global CZAS_NA_WPROWADZENIE_SLOWA
     global MAX_UZYTKOWNIKOW
@@ -120,6 +122,7 @@ def Prasowanie():
         MAX_UZYTKOWNIKOW = int(config['serwer']['max_uzytkownikow'])
         czyszczacz = int(config['serwer']['czyszczacz'])
         uzytkownik = int(config['serwer']['uzytkownik'])
+        DO_KONCA_GRY = int(config['serwer']['do_konca_gry'])
     except:
         print("Błąd w parsowaniu")
         return False
@@ -634,6 +637,7 @@ def Broadcast_punktow(Bierzaca_gra_gracze, id_gry):
 
 def Gra(Bierzaca_gra_gracze, Ilosc_w_grze):
     """dostaje liste 10-2 graczy z kolejki odsługuje wszystkich naraz a później się wyłącza"""
+    global DO_KONCA_GRY
     global Slownik_slow
     global Slownik_punktow
     global Slownik_punktow_plik
@@ -674,7 +678,7 @@ def Gra(Bierzaca_gra_gracze, Ilosc_w_grze):
     #obsluga 10 rund po stronie klienta
     do_konca = 0
     while True:
-        if do_konca >= 100:
+        if do_konca >= DO_KONCA_GRY:
             break
         if Czy_zgadnieto_slowo(id_gry) == 1:
             #slowo zostalo zgadniete
