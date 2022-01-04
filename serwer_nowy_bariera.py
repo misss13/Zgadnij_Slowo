@@ -41,6 +41,7 @@ Slownik_logow = {} #id_gry:tresc CZYSIC!!!!! <-> czyszczone po zapisie
 Slownik_nazwa_gra = {} #nazwa_uzy:id_gry stałe
 Slownik_id_gracze = {} #{id_gry:[nazwa_uzy1, nazwa_uzy2]}
 Slownik_barier = {} #{id_gry:bariera_id}
+Slownik_gier_2 = {} #id_gry:czy_juz_rozsylac
 Lista_slow_do_losowania = [] #uzywana do przetasowania tablicy nastepnie usuwana <-> RAM friendly
 
 
@@ -96,6 +97,20 @@ def Czy_zgadnieto_slowo(id_gry):
     global Slownik_gier
     try:
         if Slownik_gier[id_gry] == 1:
+            return True
+        else:
+            return False
+    except:
+        print("Brak gry o podanym id, albo slownik wybuchł")
+        return (-1)
+
+
+def Czy_zgadnieto_slowo_2(id_gry):
+    """Funkcja wysyła punkty"""
+    global Slownik_gier_2
+    
+    try:
+        if Slownik_gier_2[id_gry] == 1:
             return True
         else:
             return False
@@ -346,6 +361,7 @@ def Obsluga_klienta(client, adres):
     global Slownik_id_gracze
     global Slownik_barier
     global Slownik_nazwa_klient
+    global Slownik_gier_2
     global ILOSC_RUND
 
     czy_uwierzytelniony, nazwa_uzy = Uwierzytelnienie(client)
@@ -372,8 +388,17 @@ def Obsluga_klienta(client, adres):
         #10 rund
         for runda in range(ILOSC_RUND):
             #zgadnieto slowo w poprzedniej rundzie
+            Update_barier(id_gry)
+            bariera = Slownik_barier[id_gry] #synchronizacja klientów przed rundą
             if Czy_zgadnieto_slowo(id_gry) == 1:
-                time.sleep(2) #czekam az Gra() wysle slowo/npunkty/n?
+                print("tak w poprzedniej rundzie")
+                try:
+                    client.send(str.encode(str(Slownik_slow[nazwa_uzy]) + "\n"))
+                    client.send(str.encode(str(Slownik_punktow[id_gry][nazwa_uzy]) + "\n"))
+                    client.send(str.encode("?\n"))
+                except:
+                    print("błąd - nie można wysłać - punlktow - klient rozłączony: " + str(nazwa_uzy))
+                time.sleep(3)
                 break
 
             e = threading.Event()
@@ -446,11 +471,19 @@ def Obsluga_klienta(client, adres):
                             Slownik_punktow[id_gry][nazwa_uzy] += 5
                             client.send(str.encode(str(Slownik_punktow[id_gry][nazwa_uzy])+"\n"))
                             client.send(str.encode("?\n"))
-                            Slownik_id_gracze[id_gry].remove(nazwa_uzy)
-                            Rozlacz_ladnie(client, nazwa_uzy)
-                            Update_barier(id_gry)
-                            Slownik_gier[id_gry] = 1 #zgadnięto słowo na koncu żeby klient nie otrzymal 2 razy tego samego
                             Slownik_logow[id_gry] += "["+ datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + "] " + "Gracz: " +str(nazwa_uzy)+ " zgadł słowo - dostaje 5 punktów" +"\n"
+                            bariera = Slownik_barier[id_gry] #synchronizacja klientów po rundzie
+                            try:
+                                bariera.wait()
+                                Slownik_gier[id_gry] = 1 #zgadnięto słowo 
+                            except:
+                                print("Błąd z synchronizacją u zwycięzcy")
+                            Slownik_gier[id_gry] = 1
+                            try:
+                                Slownik_id_gracze[id_gry].remove(nazwa_uzy)
+                                Rozlacz_ladnie(client, nazwa_uzy)
+                            except:
+                                print("Boze ile bledow")
                             return True
                         except:
                             Slownik_logow[id_gry] += "["+ datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + "] " + "Gracz: " +str(nazwa_uzy)+ "błąd - klient rozłączony\n"
@@ -697,6 +730,7 @@ def Gra(Bierzaca_gra_gracze, Ilosc_w_grze):
     global Slownik_nazwa_gra
     global Slownik_id_gracze
     global Slownik_barier
+    global Slownik_gier_2
     global DO_KONCA_GRY
 
     #id_gry
@@ -706,6 +740,7 @@ def Gra(Bierzaca_gra_gracze, Ilosc_w_grze):
     Slownik_id_gracze[id_gry] = []
     
     Slownik_gier[id_gry] = 0 
+    Slownik_gier_2[id_gry] = 0
     Slownik_logow[id_gry] = "["+ datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + "] " + "Zaczęto grę o id: " + str(id_gry) +"\n"
     
     #klienci_gry
@@ -714,7 +749,6 @@ def Gra(Bierzaca_gra_gracze, Ilosc_w_grze):
     print(Slownik_logow)
 
     tablica_klientow = []
-    print(Slownik_nazwa_klient)
     for i in range(Ilosc_w_grze):
         try:
             tablica_klientow.append(Slownik_nazwa_klient[Bierzaca_gra_gracze[i]])
@@ -747,22 +781,20 @@ def Gra(Bierzaca_gra_gracze, Ilosc_w_grze):
     do_konca = 0
     DO_KONCA_GRY_PRZEZ_2 = round(DO_KONCA_GRY/2)
     while True:
+        #if Czy_zgadnieto_slowo_2(id_gry) == 1:
+        #    #slowo zostalo zgadniete
+        #    Broadcast_punktow(Bierzaca_gra_gracze, id_gry)
+        #    break
         if do_konca >= DO_KONCA_GRY_PRZEZ_2:
             break
         if len(Slownik_id_gracze[id_gry]) == 0:
             time.sleep(3) #na spokojnie żeby wszystkie wątki się skończyły
             break
-        if Czy_zgadnieto_slowo(id_gry) == 1:
-            #slowo zostalo zgadniete
-            time.sleep(0.2)
-            Broadcast_punktow(Bierzaca_gra_gracze, id_gry)
-            break
-        elif Czy_zgadnieto_slowo(id_gry) == (-1):
+        if Czy_zgadnieto_slowo(id_gry) == (-1):
             #błąd slownika
             print("Błąd słownika - Gra")
             break
-        print(Slownik_id_gracze[id_gry], end =" ")
-        print(id_gry)
+        print(Slownik_id_gracze[id_gry])
         do_konca+=1    
         time.sleep(2)
         
