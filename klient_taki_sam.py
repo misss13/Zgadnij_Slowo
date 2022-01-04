@@ -30,7 +30,7 @@ random.shuffle(szuffle)
 
 def Losuj_slowo():
     """Losowanie slowa bez uzycia RAM-u"""
-    global WSKAZNIK
+    """global WSKAZNIK
 
     with open("slowa_mini.txt", mode="r", encoding="utf-8") as file_obj:
         with mmap.mmap(file_obj.fileno(), length=0, access=mmap.ACCESS_READ) as mmap_obj:
@@ -40,7 +40,8 @@ def Losuj_slowo():
             WSKAZNIK += 1
             if WSKAZNIK >= 3045268:
                 WSKAZNIK%=3045268
-            return text.decode().replace("\n", "")
+            return text.decode().replace("\n", "")"""
+    return "ananas"
 
 
 def Otrzymaj(client):
@@ -84,8 +85,8 @@ def Zgadnij_literke():
     global WSKAZNIK_ALFA
     WSKAZNIK_ALFA+=1
     WSKAZNIK_ALFA%=35
-    return szuffle[WSKAZNIK_ALFA]
-
+    #return szuffle[WSKAZNIK_ALFA]
+    return "a"
     
 def Logowanie(klient):
     """Funkcja loguje klienta na serwer"""
@@ -167,6 +168,7 @@ while(True):
         print("Podaj literke [+] [enter] [literka]/ slowo [=] [enter] [slowo]: ")
         time.sleep(0.2)
         znak = choice(["+", "-"])
+        znak = "=" #HALOOOOOO TUTAJ MUSISZ ZMIENIAC ;3
         if znak == "+":
             czy_litera = 1 #literka
             tresc = Zgadnij_literke()
@@ -177,6 +179,10 @@ while(True):
             tresc = Losuj_slowo()
             slowko = tresc
             znak = "="
+        if i ==0:
+            tresc = "kotek"
+        else:
+            tresc = "ananas"
         print()
         print("Wysyłam: " + str(znak) + str(tresc)+ "\n")
         time.sleep(0.2)
@@ -244,9 +250,6 @@ while(True):
                 if response == False:
                     break
                 #zamiana ciagu na zgadniete literki
-                print(response)
-                if dlugosc_slowa != len(response):
-                    break
                 for i in range(dlugosc_slowa):
                     print(response[i])
                     if(response[i] == "1"):
