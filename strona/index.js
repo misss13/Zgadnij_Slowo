@@ -34,7 +34,7 @@ $.getJSON('http://balalaika.ct8.pl/punkty.json', function(data) {
 
 $.getJSON('http://balalaika.ct8.pl/kolejka.json', function(data) {
       new gridjs.Grid({
-        columns: ["Kolejka z oczekującymi graczami - Nrumer indexu"],
+        columns: ["Kolejka z oczekującymi graczami - Numer indexu"],
         data: data,
         style: {
           table: {
