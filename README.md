@@ -1,7 +1,14 @@
+[![Contributors][contributors-shield]][contributors-url]
+[![Forks][forks-shield]][forks-url]
+[![Stargazers][stars-shield]][stars-url]
+[![Issues][issues-shield]][issues-url]
+[![MIT License][license-shield]][license-url]
+[![LinkedIn][linkedin-shield]][www.linkedin.com/in/zuzanna-konopek]
+
 # Zgadnij Slowo
 
 ## Opis
-Gra pisana jako projekt na przedmiot Systemy Operacyjne. Na początku jej pliki znajdowały się w moim repo Systemy Operacyjne. Razem z dość sporą zmianą w treści polecenia postanowiłam, że czas na osobne repozytorium. Zasady dotyczące protokołu zdnajdują się tutaj [Zgadnij słowo - zasady](https://docs.google.com/document/d/1-8pCYH72MZ9gG4ABTg2KkhmAc4gaL6aznOohr4Zht9c)
+Gra pisana jako projekt na przedmiot Systemy Operacyjne. Na początku jej pliki znajdowały się w moim repo Systemy Operacyjne. Razem z dość sporą zmianą w treści polecenia postanowiłam, że czas na osobne repozytorium. Zasady dotyczące protokołu zdnajdują się tutaj [Zgadnij słowo - zasady](https://docs.google.com/document/d/1-8pCYH72MZ9gG4ABTg2KkhmAc4gaL6aznOohr4Zht9c). Gra pomimo użycia około 3mil słów nie potrzebuje dużo RAMu ok 100mb, używam mmap do chodzenia po pliku ze słowami.
 
 ## Spis treści
 
