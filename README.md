@@ -6,6 +6,8 @@ Gra pisana jako projekt na przedmiot Systemy Operacyjne. Na początku jej pliki 
 ## Spis treści
 
 ## Wymagania do włączenia serwera
+ - Python 3.10.1
+ - ``bash python serwer_nowy.py [ser/lok]``
 ### Pliki potrzebne
  - serwer_nowy.py - kod serwera
  - slowa.txt - zestaw słów z których losuje słowo
@@ -15,6 +17,17 @@ Gra pisana jako projekt na przedmiot Systemy Operacyjne. Na początku jej pliki 
 ### Pliki opcjonalne
  - punkty.json - na strone do tabelki
  - kolejka.json - na strone do tabelki
-## /Strona
+ - 
+## Strona
  - stronka.html - aktualnie wyświetlana
  - index.js - używam jsGrid do zarządzania wyświetlaniem tabeli
+
+## TODO
+ - [x] Serwer sam wybiera słowo
+ - [x] Gry odbywają się asynchronicznie
+ - [x] Rundy odbywają się synchronicznie
+ - [ ] Szybszy czas rund
+ - [ ] Sprawdzanie czy gracz czeka w kolejce <wyrzucanie po ns>
+ - [ ] Slownik klientów
+ - [ ] Optymalizacja pamięci
+ 
