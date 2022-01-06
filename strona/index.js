@@ -7,12 +7,12 @@ $.getJSON('http://balalaika.ct8.pl/punkty.json', function(data) {
         data: data,
         style: {
           table: {
-            border: '3px solid rgba(153, 142, 142, 0)'
+            border: '3px rgba(153, 142, 142, 0)'
           },
           th: {
             'background-color': 'rgba(224, 80, 80, 0.952)',
             color: '#fff',
-            'border-bottom': '3px solid #ccc',
+            'border-bottom': '3px #ccc',
             'text-align': 'center'
           },
           td: {
@@ -37,13 +37,10 @@ $.getJSON('http://balalaika.ct8.pl/kolejka.json', function(data) {
         columns: ["Kolejka z oczekującymi graczami - Numer indexu"],
         data: data,
         style: {
-          table: {
-            border: '3px solid rgba(153, 142, 142, 0)'
-          },
           th: {
             'background-color': 'rgba(224, 80, 80, 0.952)',
             color: '#fff',
-            'border-bottom': '3px solid #ccc',
+            'border-bottom': '3px #ccc',
             'text-align': 'center'
           },
           td: {
