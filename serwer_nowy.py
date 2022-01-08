@@ -1,4 +1,5 @@
 import socket
+import select
 import threading
 import hashlib
 import time
@@ -19,6 +20,7 @@ Slownik_hasel = {}
 """Hasła trzymane są w shadow.txt w postaci hashy"""
 #'123123':'96cae35ce8a9b0244178bf28e4966c2ce1b8385723a96a6b838858cdd6ca0a1e' #haslo 123123
 #'000001': 'a7fda0b61e2047f0f1057d1f5f064c272fd5d490961c531f4df64b0dd354683a' #haslo 000001
+
 
 DO_KONCA_GRY = 100
 WSKAZNIK = 0
@@ -144,7 +146,6 @@ def Prasowanie():
             print("błąd w usuwaniu punktów")
 
 
-
 def Zapisz_logi_gry(id_gry):
     """Zapisuje logi danej gry do pliku z logami gier. Zwraca True gdy powiódł się zapis"""
     global Slownik_logow
@@ -245,17 +246,6 @@ class ThreadWithReturnValue(threading.Thread):
 def Update_Slownik_hasel():
     global Slownik_hasel
     Slownik_hasel = json.load(open("shadow.txt"))
-
-
-def Czy_w_slowniku(slowo: str):
-    """Czy_w_slowniku(str) - zwraca True jesli w slowniku występuje podane słowo w przeciwnym wypadku"""
-    file = open('slowa.txt', 'r')
-    if(slowo in file.read()):
-        file.close()
-        return True
-    else:
-        file.close()
-        return False
 
 
 def Rozlacz_ladnie(client, nazwa):
@@ -564,10 +554,11 @@ def Obsluga_klienta(client, adres):
                 bariera.wait()
             except:
                 print("Błąd z synchronizacją klienta - nieaktualna bariera użyta :<")
-            time.sleep(1.5)
+            time.sleep(0.2)
         #koniec rundy
         #Koniec obsługi <-> koniec połączenia klienta wracam do Gry
         Rozlacz_ladnie(client, nazwa_uzy)
+        Slownik_id_gracze[id_gry].remove(nazwa_uzy)
         return True
 
 
@@ -596,6 +587,7 @@ def Czasomierz():
     global Kolejka_graczy
     global Czas_do_rundy
     global Kolejka_zapisu
+    global Slownik_nazwa_klient
     global MAX_UZYTKOWNIKOW
     global MIN_UZYTKOWNIKOW
 
@@ -605,8 +597,18 @@ def Czasomierz():
     ile_razy_kratka = 1
     trwanie_do_rundy = round(Czas_do_rundy / 2)
     animacja = round(Czas_do_rundy/30)
+  
     while True:
         Prasowanie()
+        #wyrzucanie gracza z kolejki
+        for pedent in Kolejka_graczy:
+            klient = Slownik_nazwa_klient[pedent]
+            rs, _, _ = select.select([klient], [], [], 0.01)
+            if len(rs) != 0:
+                Ilosc_graczy -= 1
+                Kolejka_graczy.remove(pedent)
+                Rozlacz_ladnie(klient, pedent)
+
         trwanie_do_rundy = round(Czas_do_rundy / 2)
         animacja = round(Czas_do_rundy/30)
         #rysowanie pasku ładowania do kolejnej gry (jesli zbierze sie odp ilosc graczy)
@@ -655,22 +657,6 @@ def Broadcast_hinta(tablica_klientow, hint: str):
             klient.send(str.encode(hint + "\n")) #niewiem czy ma byc koniec linii 
         except:
             print("błąd - Broadcast_hinta")
-            continue
-
-
-def Broadcast_punktow(Bierzaca_gra_gracze, id_gry):
-    """Wysyłanie do wszystkich wiadomości z iloscia zdobytych punktow"""
-    global Slownik_punktow
-    global Slownik_nazwa_klient
-
-    for nazwa_uzy in Bierzaca_gra_gracze:
-        try:
-            klient = Slownik_nazwa_klient[nazwa_uzy]
-            klient.send(str.encode(str(Slownik_slow[nazwa_uzy]) + "\n"))
-            klient.send(str.encode(str(Slownik_punktow[id_gry][nazwa_uzy]) + "\n"))
-            klient.send(str.encode("?\n"))
-        except:
-            print("błąd - nie można wysłać - Broadcast_punktow - klient rozłączony: " + str(nazwa_uzy))
             continue
 
 
@@ -728,7 +714,6 @@ def Gra(Bierzaca_gra_gracze, Ilosc_w_grze):
         except:
             print("Nie udało się dodać gracza nr: " + str(i))
 
-
     #Wybranie Słowa
     slowo = Losuj_slowo()
     print("Wybrano słowo: " + slowo)
@@ -744,10 +729,7 @@ def Gra(Bierzaca_gra_gracze, Ilosc_w_grze):
         Slownik_nazwa_gra[nazwa_uzy] = id_gry
 
     Slownik_barier[id_gry] = threading.Barrier(len(Slownik_id_gracze[id_gry]), timeout=10) #bo po 10s ma klienta rozłączać
-    #bariera_watek = threading.Thread(target=Update_barier, args=(id_gry,), daemon=True) #funkcja zarządzająca barierami
-    #bariera_watek.start()
-    #start_new_thread(Update_barier, (id_gry,)) 
-
+ 
     #obsluga 10 rund po stronie klienta
     do_konca = 0
     DO_KONCA_GRY_PRZEZ_2 = round(DO_KONCA_GRY/2)
@@ -757,11 +739,6 @@ def Gra(Bierzaca_gra_gracze, Ilosc_w_grze):
         if len(Slownik_id_gracze[id_gry]) == 0:
             time.sleep(3) #na spokojnie żeby wszystkie wątki się skończyły
             break
-        """if Czy_zgadnieto_slowo(id_gry) == 1:
-            #slowo zostalo zgadniete
-            time.sleep(0.2)
-            Broadcast_punktow(Bierzaca_gra_gracze, id_gry)
-            break"""
         if Czy_zgadnieto_slowo(id_gry) == (-1):
             #błąd slownika
             print("Błąd słownika - Gra")
@@ -804,6 +781,7 @@ def Gra(Bierzaca_gra_gracze, Ilosc_w_grze):
     Kolejka_zapisu.append(id_gry)
     #zapis w funkcji Czasomierz()
 
+
 if __name__=="__main__":
     if (len(sys.argv)-1) < 1:
         print("python serwer_nowy.py [lok/ser]")
@@ -830,13 +808,11 @@ if __name__=="__main__":
     Zapisz_slowa_mini()
     czasomierz_watek = threading.Thread(target=Czasomierz, args=(), daemon=True)
     czasomierz_watek.start()
-    #start_new_thread(Czasomierz,())
     while True:
         client, adres = ServerSocket.accept()
         print (adres[0] + " połączony")
         klient_wontek = threading.Thread(target=Obsluga_klienta, args=(client, adres), daemon=True)
         klient_wontek.start()
-        #start_new_thread(Obsluga_klienta,(client, adres))
         time.sleep(0.05)
 client.close()
 ServerSocket.close() 
