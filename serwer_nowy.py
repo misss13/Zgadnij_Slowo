@@ -424,15 +424,18 @@ def Obsluga_klienta(client, adres):
 
                 if float(czas) > float(CZAS_NA_WPROWADZENIE_SLOWA):
                     #odpowiedz po 2s
-                    Slownik_logow[id_gry] += "["+ datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + "] " + "Gracz: " +str(nazwa_uzy)+ " odpowiedź po: "+ str(czas) +" ignoruję gracza"+"\n"
+                    Slownik_logow[id_gry] += "["+ datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + "] " + "Gracz: " +str(nazwa_uzy)+ " odpowiedź po: "+ str(czas) +"s ignoruję gracza"+"\n"
                     try:
                         client.send(str.encode("#\n"))
-                        Update_barier(id_gry)
-                        continue
+                        #continue
                     except:
                         #klient rozłączony <-> rozłączam go ładnie
                         Slownik_id_gracze[id_gry].remove(nazwa_uzy)
                         Rozlacz_ladnie(client, nazwa_uzy)
+                        try:
+                            Update_barier(id_gry)
+                        except:
+                            print("Odpowiedz po 2s i błąd bariery przy rozłączaniu")
                         return False
 
                 if (len(wprowadzone_dane)>=1) and ("=" == wprowadzone_dane[0]):
