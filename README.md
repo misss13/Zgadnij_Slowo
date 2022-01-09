@@ -70,7 +70,7 @@ Gra pisana jako projekt na przedmiot Systemy Operacyjne. Na początku jej pliki 
  - [x] Gry odbywają się asynchronicznie
  - [x] Rundy odbywają się synchronicznie
  - [ ] Opis do odpalenia klienta
- - [ ] Szybszy czas rund
- - [ ] Sprawdzanie czy gracz czeka w kolejce <wyrzucanie po ns>
+ - [x] Szybszy czas rund
+ - [x] Sprawdzanie czy gracz czeka w kolejce <wyrzucanie po ns>
  - [ ] Slownik klientów
  - [ ] Optymalizacja pamięci
