@@ -29,6 +29,7 @@ MIN_UZYTKOWNIKOW = 2
 MAX_UZYTKOWNIKOW = 10
 NIESKONCZONOSC_POLACZEN = 100
 CZAS_NA_WPROWADZENIE_SLOWA = 2
+ILE_MAX_ROZGRYWEK = 2
 Ilosc_graczy = 0
 Numery_gier = 0
 Slownik_nazwa_klient = {} #stałe
@@ -43,6 +44,7 @@ Slownik_logow = {} #id_gry:tresc CZYSIC!!!!! <-> czyszczone po zapisie
 Slownik_nazwa_gra = {} #nazwa_uzy:id_gry stałe
 Slownik_id_gracze = {} #{id_gry:[nazwa_uzy1, nazwa_uzy2]}
 Slownik_barier = {} #{id_gry:bariera_id}
+Slownik_nazwa_ilosc_gier = {} #nazwa_uzy:ilosc_rozegranych_gier TODO
 Lista_slow_do_losowania = [] #uzywana do przetasowania tablicy nastepnie usuwana <-> RAM friendly
 
 
@@ -110,13 +112,15 @@ def Prasowanie():
     """Co kilka s aktualizowana jest zawartosc ustawien"""
     global ILOSC_RUND
     global DO_KONCA_GRY
-    global Czas_do_rundy
     global CO_ILE_POLACZENIE
     global CZAS_NA_WPROWADZENIE_SLOWA
     global MAX_UZYTKOWNIKOW
+    global ILE_MAX_ROZGRYWEK
+    global MIN_UZYTKOWNIKOW
     global Slownik_logow
     global Slownik_gier
     global Slownik_punktow
+    global Czas_do_rundy
 
 
     config = configparser.ConfigParser()
@@ -130,6 +134,8 @@ def Prasowanie():
         uzytkownik = int(config['serwer']['uzytkownik'])
         DO_KONCA_GRY = int(config['serwer']['do_konca_gry'])
         CO_ILE_POLACZENIE = float(config['serwer']['co_ile_polaczenie'])
+        ILE_MAX_ROZGRYWEK = int(config['serwer']['ile_max_rozgrywek'])
+        MIN_UZYTKOWNIKOW = int(config['serwer']['min_uzytkownikow'])
     except:
         print("Błąd w parsowaniu")
         return False
@@ -181,9 +187,13 @@ def Kolejka_graczy_json():
     global Kolejka_graczy
     do_zapisu = []
     try:
-        for gracz in Kolejka_graczy:
-            do_zapisu.append([ gracz ]) #zgodnie z kolejnością
-        json.dump(do_zapisu, open("kolejka.json", 'w'))
+        if Kolejka_graczy == []:
+            do_zapisu = [["e m p t y"]]
+            json.dump(do_zapisu, open("kolejka.json", 'w'))
+        else:
+            for gracz in Kolejka_graczy:
+                do_zapisu.append([ gracz ]) #zgodnie z kolejnością
+            json.dump(do_zapisu, open("kolejka.json", 'w'))
         return True
     except:
         print("Błąd zapoisu - Kolejka_graczy_json")
@@ -248,6 +258,12 @@ def Update_Slownik_hasel():
     Slownik_hasel = json.load(open("shadow.txt"))
 
 
+def Update_ilosc_gier():
+    """Wczytuje ilość rozegranych gier graczy do słownika"""
+    global Slownik_nazwa_ilosc_gier
+    Slownik_nazwa_ilosc_gier = json.load(open("ilosc_gier_graczy.txt"))
+
+
 def Rozlacz_ladnie(client, nazwa):
     """Rozlaczanie i usuwanie ze slownika uzytkowikow:klientow"""
     """try: TODO
@@ -271,6 +287,8 @@ def Uwierzytelnienie(polaczenie):
     #patrze sie czy gracza nie ma w kolejce <=> żeby nie był w jendej rundzie!! moze grac 2 rundy naraz ale różne
     global Kolejka_graczy
     global Slownik_hasel
+    global Slownik_nazwa_ilosc_gier
+    global ILE_MAX_ROZGRYWEK
 
     try:
         nazwa_uzy = polaczenie.recv(2048)
@@ -301,6 +319,11 @@ def Uwierzytelnienie(polaczenie):
         if nazwa_uzy in Kolejka_graczy:  #bylo Slownik_nazwa_klient
             """Zeby nie bylo sytuacji ze ktos sie łączy i gra sam ze sobą nabija sb punkty"""
             polaczenie.send(str.encode('-\n'))
+            return False, nazwa_uzy
+        elif Slownik_nazwa_ilosc_gier[nazwa_uzy] >= ILE_MAX_ROZGRYWEK:
+            """Każdy gracz powinien odbyć taką samą liczbę rozgrywek"""
+            polaczenie.send(str.encode('-\n'))
+            print("Gamon " + str(nazwa_uzy) + " już grał")
             return False, nazwa_uzy
         else:
 
@@ -336,6 +359,7 @@ def Obsluga_klienta(client, adres):
     global Slownik_id_gracze
     global Slownik_barier
     global Slownik_nazwa_klient
+    global Slownik_nazwa_ilosc_gier
     global ILOSC_RUND
 
     czy_uwierzytelniony, nazwa_uzy = Uwierzytelnienie(client)
@@ -350,7 +374,13 @@ def Obsluga_klienta(client, adres):
             if(Slownik_slow[nazwa_uzy] != ""):
                 break
             time.sleep(2)
-
+        
+        #zwiekszam ilosc rozegranych gier
+        if nazwa_uzy not in Slownik_nazwa_ilosc_gier:
+            Slownik_nazwa_ilosc_gier[nazwa_uzy] = 1
+        else:
+            Slownik_nazwa_ilosc_gier[nazwa_uzy] += 1
+        
         #id_gry do ktorej nalezy klient
         id_gry = Slownik_nazwa_gra[nazwa_uzy]
         Slownik_punktow[id_gry][nazwa_uzy] = 0 
@@ -384,6 +414,7 @@ def Obsluga_klienta(client, adres):
                     try:
                         Slownik_id_gracze[id_gry].remove(nazwa_uzy)
                         Rozlacz_ladnie(client, nazwa_uzy)
+                        Update_barier(id_gry)
                         return False
                     except:
                         print("błąd w obsłudze klienta - rozlacz ladnie")
@@ -424,7 +455,7 @@ def Obsluga_klienta(client, adres):
 
                 if float(czas) > float(CZAS_NA_WPROWADZENIE_SLOWA):
                     #odpowiedz po 2s
-                    Slownik_logow[id_gry] += "["+ datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + "] " + "Gracz: " +str(nazwa_uzy)+ " odpowiedź po: "+ str(czas) +"s ignoruję gracza"+"\n"
+                    Slownik_logow[id_gry] += "["+ datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + "] " + "Gracz: " +str(nazwa_uzy)+ " odpowiedź po: "+ str("{:.2f}".format(float(czas))) +"s ignoruję gracza"+"\n"
                     try:
                         client.send(str.encode("#\n"))
                         #continue
@@ -571,6 +602,19 @@ def Wez_slownik_punkty():
     Slownik_punktow_plik = json.load(open("punkty.txt"))
 
 
+def Zapisz_slownik_nazwa_ilosc_gier():
+    """Zapisuje akualną ilość gier do pliku"""
+    global Slownik_nazwa_ilosc_gier
+    do_zapisu = []
+    try:
+        json.dump(Slownik_nazwa_ilosc_gier, open("ilosc_gier_graczy.txt", 'w'))
+        for nazwa_uzy in Slownik_nazwa_ilosc_gier:
+            do_zapisu.append([ nazwa_uzy, Slownik_nazwa_ilosc_gier[nazwa_uzy] ])
+        json.dump(do_zapisu, open("ilosc_gier_graczy.json", 'w'))
+    except:
+        print("Błąd w zapisie punktów, slownik się posypoał")
+
+
 def Zapis_slownika_punkty():
     """Zapisuje aktualne wyniki do plików, punkty.txt oraz punkty.json"""
     global Slownik_punktow_plik
@@ -595,6 +639,7 @@ def Czasomierz():
     global MIN_UZYTKOWNIKOW
 
     Wez_slownik_punkty()
+    Update_ilosc_gier()
     print("|#####################|")
     i=0
     ile_razy_kratka = 1
@@ -635,7 +680,6 @@ def Czasomierz():
             time.sleep(0.5) #GRY BEDĄ DZIAŁAŁY ASYNCHRONICZNIE ALE ZEBY NIE BYŁO PROBLEMU Z R/W DO PLIKU
             gra_watek = threading.Thread(target=Gra, args=(Bierzaca_gra_gracze, liczba_graczy), daemon=True) #funkcja zarządzająca barierami
             gra_watek.start()
-            #start_new_thread(Gra,(Bierzaca_gra_gracze, liczba_graczy))
         time.sleep(2)
         i += 1
         Kolejka_graczy_json() #tylko ta funkcja zarządza kolejką klientów
@@ -643,6 +687,7 @@ def Czasomierz():
         #sprawdza czy jest cos do zapisu <-> zapis wszystkiego naraz żeby nie uszkodzic plików <-> zapis w tym samym czasie z dwóch wątków
         if len(Kolejka_zapisu) >= 1:
             Zapis_slownika_punkty()
+            Zapisz_slownik_nazwa_ilosc_gier()
             Kolejka_zapisu = []
 
 
@@ -670,7 +715,7 @@ def Update_barier(id_gry):
 
     if len(Slownik_id_gracze[id_gry]) > 0:
         try:
-            Slownik_barier[id_gry] = threading.Barrier(len(Slownik_id_gracze[id_gry]), timeout=10)
+            Slownik_barier[id_gry] = threading.Barrier(len(Slownik_id_gracze[id_gry]), timeout=3)
         except:
             print("błąd - Update_barier - coś nie tak")
             return False
@@ -686,7 +731,7 @@ def Gra(Bierzaca_gra_gracze, Ilosc_w_grze):
     global Numery_gier
     global Slownik_gier
     global Kolejka_zapisu
-    global Slownik_logow #TODO
+    global Slownik_logow
     global Slownik_nazwa_gra
     global Slownik_id_gracze
     global Slownik_barier
