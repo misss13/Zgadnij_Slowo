@@ -311,6 +311,8 @@ def Uwierzytelnienie(polaczenie):
 
     Update_Slownik_hasel()
     #funkcja updejtujaca baze danych urzytkownikow z pliku
+    if nazwa_uzy not in Slownik_nazwa_ilosc_gier:
+        Slownik_nazwa_ilosc_gier[nazwa_uzy] = 0
 
     if (nazwa_uzy not in Slownik_hasel) or (Slownik_hasel[nazwa_uzy] != haslo_uzy):
         polaczenie.send(str.encode('-\n'))
