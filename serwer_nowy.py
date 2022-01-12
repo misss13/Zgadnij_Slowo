@@ -44,7 +44,7 @@ Slownik_logow = {} #id_gry:tresc CZYSIC!!!!! <-> czyszczone po zapisie
 Slownik_nazwa_gra = {} #nazwa_uzy:id_gry stałe
 Slownik_id_gracze = {} #{id_gry:[nazwa_uzy1, nazwa_uzy2]}
 Slownik_barier = {} #{id_gry:bariera_id}
-Slownik_nazwa_ilosc_gier = {} #nazwa_uzy:ilosc_rozegranych_gier TODO
+Slownik_nazwa_ilosc_gier = {} #nazwa_uzy:ilosc_rozegranych_gier
 Lista_slow_do_losowania = [] #uzywana do przetasowania tablicy nastepnie usuwana <-> RAM friendly
 
 
@@ -265,11 +265,6 @@ def Update_ilosc_gier():
 
 
 def Rozlacz_ladnie(client, nazwa):
-    """Rozlaczanie i usuwanie ze slownika uzytkowikow:klientow"""
-    """try: TODO
-        Slownik_nazwa_klient.pop(nazwa)
-    except:
-        print("Niematakiego usera"+str(nazwa))"""
     try:
         client.close()
     except:
@@ -335,17 +330,16 @@ def Uwierzytelnienie(polaczenie):
             return True, nazwa_uzy
 
 
-def Wprowadz_dane(e, client):
+def Wprowadz_dane(client):
     """Sprawdza wprowadzone słowo od klienta"""
     try:
         p = time.time()
         slowo = client.recv(2048)
         slowo = str(slowo.decode())
-        slowo = slowo.lower()
-        #print(slowo)
         k = time.time() 
         return str(slowo) +":"+ str(k-p)
-    except:
+    except Exception as e:
+        print(e)
         print("blad przy przesylaniu slowa")
         return str("0:11")
 
@@ -376,8 +370,13 @@ def Obsluga_klienta(client, adres):
         while(True):
             if(Slownik_slow[nazwa_uzy] != ""):
                 break
-            time.sleep(2)
-        
+            time.sleep(1.5)
+
+        #zamykam nieużywane wątki
+        if "[closed]" in str(client):
+            print("Dbaj o zasoby segreguj nieużywane wątki <-> zamykam wątek gracza: "+ str(nazwa_uzy))
+            return False
+
         #zwiekszam ilosc rozegranych gier
         if nazwa_uzy not in Slownik_nazwa_ilosc_gier:
             Slownik_nazwa_ilosc_gier[nazwa_uzy] = 1
@@ -406,8 +405,8 @@ def Obsluga_klienta(client, adres):
                 #time.sleep(2) #czekam az Gra() wysle slowo/npunkty/n?
                 break
 
-            e = threading.Event()
-            t = ThreadWithReturnValue(target=Wprowadz_dane, args=(e,client))
+            #e = threading.Event()
+            t = ThreadWithReturnValue(target=Wprowadz_dane, args=(client,))
             t.start()
             parse = t.join(10)
             if parse != None:
@@ -424,12 +423,13 @@ def Obsluga_klienta(client, adres):
                     return False
                 parse = parse.replace("\0", "\n")
                 parse = parse.replace("\n","")
+                parse = parse.lower()
                 parse = parse.rstrip()
                 parse = parse.split(":")
                 wprowadzone_dane, czas = parse[0], parse[1]
             if t.is_alive():
                 #jeszcze nie skonczono wpisywania <-> kończe wątek i wyrzucam gracza
-                e.set()
+                #e.set()
                 Slownik_logow[id_gry] += "["+ datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + "] " + "Gracz: " +str(nazwa_uzy)+ " rozłączam minęło 10s\n"
                 try:
                     #rozlaczam po 10s 
@@ -443,7 +443,7 @@ def Obsluga_klienta(client, adres):
                     return False
             else:
                 #skonczono wpisywanie
-                if Wprowadz_dane == "0" and czas == "11":
+                if str(Wprowadz_dane) == "0" and str(czas) == "11":
                     #nastąpił błąd w funkcji wprowadzania <-> rozłączam
                     Slownik_logow[id_gry] += "["+ datetime.now().strftime("%d-%m-%Y_%H:%M:%S") + "] " + "Gracz: " +str(nazwa_uzy)+ " błąd w funkcji wprowadź dane - rozłączam" +"\n"
                     print("blad w funkcji Wprowadz_dane")
@@ -595,7 +595,8 @@ def Obsluga_klienta(client, adres):
         #koniec rundy
         #Koniec obsługi <-> koniec połączenia klienta wracam do Gry
         Rozlacz_ladnie(client, nazwa_uzy)
-        Slownik_id_gracze[id_gry].remove(nazwa_uzy)
+        if nazwa_uzy in Slownik_id_gracze[id_gry]:
+            Slownik_id_gracze[id_gry].remove(nazwa_uzy)
         return True
 
 
@@ -665,7 +666,8 @@ def Czasomierz():
         #rysowanie pasku ładowania do kolejnej gry (jesli zbierze sie odp ilosc graczy)
         if i%animacja == 0:
             print("|" + "#"*ile_razy_kratka + (16-ile_razy_kratka)*" " + "|" + str(Ilosc_graczy))
-            print(Kolejka_graczy)
+            print(Kolejka_graczy, end=" wątków:")
+            print(threading.active_count())
             ile_razy_kratka += 1
 
         if (Ilosc_graczy >= MAX_UZYTKOWNIKOW) or (i>=trwanie_do_rundy):
@@ -794,7 +796,7 @@ def Gra(Bierzaca_gra_gracze, Ilosc_w_grze):
             #błąd slownika
             print("Błąd słownika - Gra")
             break
-        print(Slownik_id_gracze[id_gry], end =" ")
+        print(Slownik_id_gracze[id_gry], end =" id_gry")
         print(id_gry)
         do_konca+=1    
         time.sleep(2)
