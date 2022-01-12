@@ -666,7 +666,7 @@ def Czasomierz():
         #rysowanie pasku ładowania do kolejnej gry (jesli zbierze sie odp ilosc graczy)
         if i%animacja == 0:
             print("|" + "#"*ile_razy_kratka + (16-ile_razy_kratka)*" " + "|" + str(Ilosc_graczy))
-            print(Kolejka_graczy, end=" wątków:")
+            print(Kolejka_graczy, end=" wąt: ")
             print(threading.active_count())
             ile_razy_kratka += 1
 
@@ -796,7 +796,7 @@ def Gra(Bierzaca_gra_gracze, Ilosc_w_grze):
             #błąd slownika
             print("Błąd słownika - Gra")
             break
-        print(Slownik_id_gracze[id_gry], end =" id_gry")
+        print(Slownik_id_gracze[id_gry], end =" id: ")
         print(id_gry)
         do_konca+=1    
         time.sleep(2)
