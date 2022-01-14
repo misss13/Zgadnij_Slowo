@@ -53,18 +53,26 @@ Gra pisana jako projekt na przedmiot Systemy Operacyjne. Na początku jej pliki 
 ## Wymagania do włączenia serwera
  - Python 3.10.1
  - ``python serwer_nowy.py [ser/lok]`` gdzie odpowiednio ``ser`` - z moimi danymi serwera ``lok`` na loopbacku
+ - należy zmienić ścieżkę do katalogu domowego użytkownika w nim znajduje się plik slowa_mini.txt
 ### Pliki potrzebne
  - serwer_nowy.py - kod serwera
  - slowa.txt - zestaw słów z których losuje słowo
  - shadow.txt - słownik użytkowników i hashy ich haseł(protokół nie uwzględnia szyfrowania więc hashe będą publiczne)
  - ustawienia.ini - ustawienia serwera(czas trwania gry, czas do nowej gry, itd)
  - punkty.txt - słownik punktów graczy
+ - ilosc_gier_graczy.txt - slownik ilości rozegranych gier przez graczy
 ### Pliki opcjonalne
  - punkty.json - na strone do tabelki
  - kolejka.json - na strone do tabelki
 ## Strona
  - stronka.html - aktualnie wyświetlana
  - index.js - używam jsGrid do zarządzania wyświetlaniem tabeli
+## Wymagania do włączenia klienta
+### Wymagania do włączenia
+ - python 3.10.1
+ - ``klient_nowy_samodzielny.py [ser/lok] [nazwa_użytkownika] [hasło]``
+### Pliki potrzene
+ - slowa_mini.txt - albo plik slowa.txt trzeba zmienić w funkcji Losuj_slowo()
 ## TODO
  - [x] Serwer sam wybiera słowo
  - [x] Gry odbywają się asynchronicznie
