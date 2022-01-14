@@ -69,8 +69,8 @@ Gra pisana jako projekt na przedmiot Systemy Operacyjne. Na początku jej pliki 
  - [x] Serwer sam wybiera słowo
  - [x] Gry odbywają się asynchronicznie
  - [x] Rundy odbywają się synchronicznie
- - [ ] Opis do odpalenia klienta
+ - [x] Opis do odpalenia klienta
  - [x] Szybszy czas rund
  - [x] Sprawdzanie czy gracz czeka w kolejce <wyrzucanie po ns>
- - [ ] Slownik klientów
- - [ ] Optymalizacja pamięci
+ - [x] Slownik klientów
+ - [x] Optymalizacja pamięci i usuwanie nieużywanych wątków
